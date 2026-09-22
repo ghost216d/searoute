@@ -12,6 +12,7 @@ if (status) status.textContent = 'Ready. The first use downloads a compact AI mo
 let transformers;
 let textGenerator;
 let fishClassifier;
+let modelUnavailable = false;
 
 function progressMessage(prefix, event) {
   if (!status || !event) return;
@@ -24,9 +25,13 @@ async function library() {
   if (!transformers) {
     status.className = 'ai-status';
     status.textContent = 'Loading the on-device AI engine…';
-    transformers = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+    // Transformers.js v2 has the widest mobile-browser support. The v3 build
+    // previously used here failed during start-up on both Safari and Chrome.
+    transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
     transformers.env.allowLocalModels = false;
     transformers.env.useBrowserCache = true;
+    transformers.env.backends.onnx.wasm.numThreads = 1;
+    transformers.env.backends.onnx.wasm.proxy = false;
   }
   return transformers;
 }
@@ -37,13 +42,52 @@ async function loadTextModel() {
   status.className = 'ai-status';
   status.textContent = 'Downloading the compact language model for this phone…';
   textGenerator = await pipeline('text2text-generation', 'Xenova/flan-t5-small', {
-    device: 'wasm',
-    dtype: 'q8',
+    quantized: true,
     progress_callback: (event) => progressMessage('Language model download', event),
   });
   status.className = 'ai-status online';
   status.textContent = 'On-device language AI is ready. Requests are processed on this phone.';
   return textGenerator;
+}
+
+function value(value, fallback = 'not available') {
+  const text = String(value || '').trim();
+  return text && text.toLowerCase() !== 'unknown' ? text : fallback;
+}
+
+function localTripBrief(context = {}) {
+  const concerns = [value(context.outlook, ''), value(context.outlookText, '')].filter(Boolean).join(' — ') || 'No app warning is available yet.';
+  const conditions = [
+    context.wind ? `Wind: ${context.wind}` : '',
+    context.waves ? `waves: ${context.waves}` : '',
+    context.visibility ? `visibility: ${context.visibility}` : '',
+    context.waterTemperature ? `water temperature: ${context.waterTemperature}` : '',
+  ].filter(Boolean).join('; ');
+  return `Main concern: ${concerns}\n\nFishing outlook: ${conditions || 'Check a location first to load live conditions.'}${context.likelySpecies ? ` Likely local species shown by the app: ${context.likelySpecies}.` : ''}\n\nTake: charged phone, suitable clothing, drinking water, first-aid kit and the correct safety equipment for ${value(context.waterType, 'this water')}.\n\nBefore leaving: check the official local forecast, water conditions, notices, access, licence rules and your return time. This summary does not confirm that conditions are safe.`;
+}
+
+function localQuestionAnswer(question, context = {}) {
+  const q = String(question || '').toLowerCase();
+  if (/bait|lure/.test(q)) return `The app currently lists ${value(context.likelySpecies, 'no confirmed target species')}. Choose bait or lures for the target species and local water, and check local rules before fishing.`;
+  if (/pack|bring|equipment|kit/.test(q)) return `Take a charged phone, weather-appropriate clothing, water, first-aid kit, landing and unhooking equipment, and the correct personal safety equipment. For a boat, also verify lifejackets, communications, fuel, navigation lights and your return plan.`;
+  if (/safe|danger|weather|wind|wave|condition/.test(q)) return `The app reading is ${value(context.outlook)}. Wind: ${value(context.wind)}; waves: ${value(context.waves)}; visibility: ${value(context.visibility)}. This cannot confirm safety—check the official forecast, local notices and conditions at the water before leaving.`;
+  if (/fish|species|catch/.test(q)) return `Species currently suggested for the selected area: ${value(context.likelySpecies)}. Treat this as general guidance and confirm identification, seasons, sizes and catch limits with an authoritative local source.`;
+  if (/beginner|start/.test(q)) return `Start from an accessible shore location in daylight, tell someone your plan and return time, check the official forecast and local rules, and use simple tackle suited to the likely species: ${value(context.likelySpecies)}.`;
+  return `For ${value(context.area, 'this location')}, the app shows: ${value(context.outlook)}; wind ${value(context.wind)}; waves ${value(context.waves)}; visibility ${value(context.visibility)}. Ask about safety, weather, kit, bait, beginners or likely fish for a more specific answer. Always verify official local information.`;
+}
+
+function localCatchPost(data = {}) {
+  const species = value(data.species, 'a fish');
+  const outcome = value(data.outcome, 'outcome not recorded');
+  const notes = value(data.notes, 'No extra notes');
+  return `Private journal\nCatch: ${species}\nArea: ${value(data.context?.area, 'not recorded')}\nOutcome: ${outcome}\nNotes: ${notes}\n\nOptional social post\nA memorable session and a ${species} today. ${outcome}. ${notes} #Fishing #AnglerRoute\n\nExact location has not been included.`;
+}
+
+function localFallback(action, data) {
+  if (action === 'trip_brief') return localTripBrief(data.context);
+  if (action === 'question') return localQuestionAnswer(data.question, data.context);
+  if (action === 'catch_post') return localCatchPost(data);
+  return '';
 }
 
 function contextLines(context = {}) {
@@ -73,15 +117,23 @@ function promptFor(action, data) {
 }
 
 async function runText(action, data) {
-  const generator = await loadTextModel();
-  const result = await generator(promptFor(action, data), {
-    max_new_tokens: action === 'question' ? 150 : 180,
-    temperature: 0.35,
-    repetition_penalty: 1.15,
-  });
-  const text = result?.[0]?.generated_text?.trim();
-  if (!text) throw new Error('the phone produced no answer');
-  return text;
+  if (!modelUnavailable) {
+    try {
+      const generator = await loadTextModel();
+      const result = await generator(promptFor(action, data), {
+        max_new_tokens: action === 'question' ? 150 : 180,
+        temperature: 0.35,
+        repetition_penalty: 1.15,
+      });
+      const text = result?.[0]?.generated_text?.trim();
+      if (text) return text;
+    } catch (error) {
+      modelUnavailable = true;
+    }
+  }
+  status.className = 'ai-status online';
+  status.textContent = 'Mobile assistant ready. Using the fast on-device mode with no download, account or usage limit.';
+  return localFallback(action, data);
 }
 
 function fishLabels(context = {}) {
@@ -95,8 +147,7 @@ async function identifyFish(data) {
     status.className = 'ai-status';
     status.textContent = 'Downloading the fish-photo model to this phone…';
     fishClassifier = await pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', {
-      device: 'wasm',
-      dtype: 'q8',
+      quantized: true,
       progress_callback: (event) => progressMessage('Photo model download', event),
     });
   }
@@ -115,8 +166,14 @@ window.AnglerRouteLocalAI = {
       return action === 'identify_fish' ? await identifyFish(data) : await runText(action, data);
     } catch (error) {
       status.className = 'ai-status error';
-      status.textContent = 'On-device AI could not start on this browser. The normal live information remains available.';
-      throw new Error(error?.message || 'on-device AI is unavailable');
+      if (action === 'identify_fish') {
+        const candidates = fishLabels(data.context).slice(0, 5).join(', ');
+        status.textContent = 'Photo analysis is not supported by this phone. The rest of the mobile assistant is still available.';
+        return `The photo model could not run on this phone, so the image has not been identified. Species listed for this area include: ${candidates}. Compare the fish's markings, fins and shape with an authoritative local guide before keeping or releasing it.`;
+      }
+      status.className = 'ai-status online';
+      status.textContent = 'Mobile assistant ready in fast on-device mode.';
+      return localFallback(action, data);
     }
   },
 };

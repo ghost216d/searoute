@@ -22,29 +22,60 @@
       <button class="primary" id="check">Check live safety →</button><p class="note">Prototype guidance only — always check official charts and forecasts.</p>
     </aside>
     <section class="content">
-      <div class="livebar"><div><b>● Live safety information</b><p><small>Demonstration weather, waves and tide guidance</small></p></div><span>All alerts →</span></div>
-      <section class="card result" id="result"><div class="resulthead"><div class="status"><div class="tick">✓</div><div><p class="eyebrow">Journey outlook</p><h2 id="outlook">Good to go</h2><span id="outlookText">Conditions look suitable for your selected boat.</span></div></div><div class="return"><small>Safest return</small><b>Before 4:30 PM</b></div></div>
-        <div class="conditions"><div class="map"><div class="maptop"><span class="pill">Selected waters</span><span class="pill">11.8 nautical miles</span></div><div class="line"></div><div class="routebottom"><div class="port"><small>Leave</small><b id="mapHarbour">Portsmouth Harbour</b><small id="mapTime">08:30</small></div><div class="port"><small>Fishing area</small><b id="mapArea">Nab Tower fishing grounds</b><small>Route preview</small></div></div></div><div class="weather"><h3>Journey conditions</h3><div class="weatherrow"><span>Wind</span><b>8–12 mph</b></div><div class="weatherrow"><span>Waves</span><b>0.4–0.7 m</b></div><div class="weatherrow"><span>Visibility</span><b>Very good</b></div><div class="weatherrow"><span>Tide</span><b>Falling</b></div></div></div>
+      <div class="livebar"><div><b>● Live marine information</b><p><small id="liveStamp">Connecting to Open-Meteo…</small></p></div><span id="provider">Open-Meteo</span></div>
+      <section class="card result" id="result"><div class="resulthead"><div class="status"><div class="tick" id="statusIcon">↻</div><div><p class="eyebrow">Live journey outlook</p><h2 id="outlook">Loading conditions</h2><span id="outlookText">Fetching the latest available model data.</span></div></div><div class="return"><small>Safety routine</small><b>Recheck every 30 min</b></div></div>
+        <div class="conditions"><div class="map"><div class="maptop"><span class="pill">Selected waters</span><span class="pill" id="coordinates">50.67°N · 0.95°W</span></div><div class="line"></div><div class="routebottom"><div class="port"><small>Leave</small><b id="mapHarbour">Portsmouth Harbour</b><small id="mapTime">08:30</small></div><div class="port"><small>Fishing area</small><b id="mapArea">Nab Tower fishing grounds</b><small>Live conditions point</small></div></div></div><div class="weather"><h3>Current conditions</h3><div class="weatherrow"><span>Wind</span><b id="wind">Loading…</b></div><div class="weatherrow"><span>Waves</span><b id="waves">Loading…</b></div><div class="weatherrow"><span>Visibility</span><b id="visibility">Loading…</b></div><div class="weatherrow"><span>Sea temperature</span><b id="seaTemp">Loading…</b></div><div class="weatherrow"><span>Sea level*</span><b id="seaLevel">Loading…</b></div></div></div>
       </section>
       <div class="guidance"><article class="card guide"><div class="num">1</div><h3>Leave around 8:30 AM</h3><p>The tide and wind are favourable for your outward journey.</p></article><article class="card guide"><div class="num">2</div><h3>Take care after 3 PM</h3><p>The wind may strengthen later. Keep checking official forecasts.</p></article><article class="card guide"><div class="num">3</div><h3>Be inside harbour by 4:30 PM</h3><p>This gives you a comfortable margin before conditions change.</p></article></div>
       <section class="world"><div class="worldhead"><div><p class="eyebrow">Fishing around the world</p><h2>Explore famous fishing waters</h2></div><p>Compare the local environment and safety considerations before planning a trip.</p></div><div class="chips"><span class="chip">North Atlantic</span><span class="chip">Arctic Circle</span><span class="chip">Caribbean Sea</span><span class="chip">Coral Sea</span><span class="chip">Freshwater</span><span class="chip">North Pacific</span><span class="chip">Indian Ocean</span></div><div class="locations" id="locations"></div></section>
     </section>
   </main>
-  <footer class="disclaimer"><p><b>SeaRoute is a prototype.</b> It does not replace official marine forecasts, charts, local notices or professional judgement.</p></footer><div class="toast" id="toast">Destination added to your trip planner</div>
+  <footer class="disclaimer"><p><b>Live model data from <a href="https://open-meteo.com/" style="color:white">Open-Meteo</a>.</b> *Sea level includes modelled tides but is not a coastal tide prediction. SeaRoute does not replace official marine forecasts, charts, local notices or professional judgement.</p></footer><div class="toast" id="toast">Destination added to your trip planner</div>
   <script>
     const locations=[
-      {image:'https://images.squarespace-cdn.com/content/v1/54f57928e4b020ae7ada4a1a/f551f12a-f558-4248-a6c4-efc7e9c8262e/%28R%29D444182.jpg',location:'Cornwall Coast',country:'United Kingdom',region:'North Atlantic',species:'Bass · Mackerel',safety:'Tidal headlands · Swell changes quickly',harbour:'Falmouth Harbour',area:'Manacles fishing grounds'},
-      {image:'https://images.trvl-media.com/place/6345205/6175fd30-6834-412d-a1aa-e969f0676b7b.jpg',location:'Lofoten Islands',country:'Norway',region:'Arctic Circle',species:'Cod · Halibut',safety:'Cold water · Fast-moving weather',harbour:'Svolvær Harbour',area:'Vestfjorden fishing grounds'},
-      {image:'https://georgepoveromo.com/UserFiles/Florida_Keys_Mahi_Fishing-3.jpg',location:'Florida Keys',country:'United States',region:'Caribbean Sea',species:'Mahi-mahi · Tarpon',safety:'High UV · Afternoon storms',harbour:'Key West Harbour',area:'Gulf Stream fishing grounds'},
-      {image:'https://www.visitportdouglasdaintree.com/images/_rectangle/Zulu.png',location:'Great Barrier Reef',country:'Australia',region:'Coral Sea',species:'Coral trout · Spanish mackerel',safety:'Reef passages · Strong tropical sun',harbour:'Port Douglas Marina',area:'Outer Reef fishing grounds'},
-      {image:'https://images.unsplash.com/photo-1640940146271-eed77f5eeb38?auto=format&fit=crop&w=1200&q=82',location:'Lake Biwa',country:'Japan',region:'Freshwater',species:'Black bass · Biwa trout',safety:'Open-water wind · Busy shore zones',harbour:'Otsu Marina',area:'North Basin fishing area'},
-      {image:'https://images.squarespace-cdn.com/content/v1/5cd9b620b914490d3b475454/5c44f622-5aae-4b37-9843-5a34080a78f2/IMG_5892.jpeg',location:'Yakutat Coast',country:'Alaska, United States',region:'North Pacific',species:'Salmon · Halibut',safety:'Cold water · Remote coastline',harbour:'Yakutat Harbour',area:'Yakutat Bay fishing grounds'},
-      {image:'https://lp-cms-production.s3.amazonaws.com/public/2023-03/LPT0513_084.jpg?sharp=10&vib=20&w=1200',location:'Mahé',country:'Seychelles',region:'Indian Ocean',species:'Tuna · Giant trevally',safety:'Tropical heat · Offshore currents',harbour:'Victoria Harbour',area:'Mahé Plateau fishing grounds'}
+      {image:'https://images.squarespace-cdn.com/content/v1/54f57928e4b020ae7ada4a1a/f551f12a-f558-4248-a6c4-efc7e9c8262e/%28R%29D444182.jpg',location:'Cornwall Coast',country:'United Kingdom',region:'North Atlantic',species:'Bass · Mackerel',safety:'Tidal headlands · Swell changes quickly',harbour:'Falmouth Harbour',area:'Manacles fishing grounds',lat:50.05,lon:-5.05},
+      {image:'https://images.trvl-media.com/place/6345205/6175fd30-6834-412d-a1aa-e969f0676b7b.jpg',location:'Lofoten Islands',country:'Norway',region:'Arctic Circle',species:'Cod · Halibut',safety:'Cold water · Fast-moving weather',harbour:'Svolvær Harbour',area:'Vestfjorden fishing grounds',lat:68.2,lon:14.5},
+      {image:'https://georgepoveromo.com/UserFiles/Florida_Keys_Mahi_Fishing-3.jpg',location:'Florida Keys',country:'United States',region:'Caribbean Sea',species:'Mahi-mahi · Tarpon',safety:'High UV · Afternoon storms',harbour:'Key West Harbour',area:'Gulf Stream fishing grounds',lat:24.5,lon:-81.75},
+      {image:'https://www.visitportdouglasdaintree.com/images/_rectangle/Zulu.png',location:'Great Barrier Reef',country:'Australia',region:'Coral Sea',species:'Coral trout · Spanish mackerel',safety:'Reef passages · Strong tropical sun',harbour:'Port Douglas Marina',area:'Outer Reef fishing grounds',lat:-16.5,lon:145.8},
+      {image:'https://images.unsplash.com/photo-1640940146271-eed77f5eeb38?auto=format&fit=crop&w=1200&q=82',location:'Lake Biwa',country:'Japan',region:'Freshwater',species:'Black bass · Biwa trout',safety:'Open-water wind · Busy shore zones',harbour:'Otsu Marina',area:'North Basin fishing area',lat:35.25,lon:136.05},
+      {image:'https://images.squarespace-cdn.com/content/v1/5cd9b620b914490d3b475454/5c44f622-5aae-4b37-9843-5a34080a78f2/IMG_5892.jpeg',location:'Yakutat Coast',country:'Alaska, United States',region:'North Pacific',species:'Salmon · Halibut',safety:'Cold water · Remote coastline',harbour:'Yakutat Harbour',area:'Yakutat Bay fishing grounds',lat:59.55,lon:-139.75},
+      {image:'https://lp-cms-production.s3.amazonaws.com/public/2023-03/LPT0513_084.jpg?sharp=10&vib=20&w=1200',location:'Mahé',country:'Seychelles',region:'Indian Ocean',species:'Tuna · Giant trevally',safety:'Tropical heat · Offshore currents',harbour:'Victoria Harbour',area:'Mahé Plateau fishing grounds',lat:-4.65,lon:55.5}
     ];
     const list=document.getElementById('locations');
     list.innerHTML=locations.map((x,i)=>`<article class="card location"><div class="photo"><img src="${x.image}" alt="${x.location}, ${x.country}" loading="lazy"><span class="region">${x.region}</span></div><div class="locbody"><span class="country">${x.country}</span><h3>${x.location}</h3><div class="species">${x.species}</div><div class="safety">${x.safety}</div><button class="planbtn" data-i="${i}">Plan a trip here →</button></div></article>`).join('');
-    list.addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;const x=locations[+b.dataset.i];harbour.value=x.harbour;area.value=x.area;outlook.textContent='Ready to check';outlookText.textContent='Your journey details have changed.';planner.scrollIntoView({behavior:'smooth'});toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2400)});
-    document.getElementById('check').addEventListener('click',()=>{mapHarbour.textContent=harbour.value;mapArea.textContent=area.value;mapTime.textContent=leave.value;outlook.textContent='Good to go';outlookText.textContent='Sample conditions look suitable for your selected boat.';result.scrollIntoView({behavior:'smooth'});toast.textContent='Journey guidance updated';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2400)});
+    let selected={lat:50.668,lon:-0.952};
+    const fmtCoord=(n,pos,neg)=>`${Math.abs(n).toFixed(2)}°${n>=0?pos:neg}`;
+    const show=(id,value)=>document.getElementById(id).textContent=value;
+    async function fetchLive(){
+      show('outlook','Checking live data');show('outlookText','Fetching the latest weather and marine models.');show('statusIcon','↻');
+      ['wind','waves','visibility','seaTemp','seaLevel'].forEach(id=>show(id,'Loading…'));
+      show('coordinates',`${fmtCoord(selected.lat,'N','S')} · ${fmtCoord(selected.lon,'E','W')}`);
+      const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${selected.lat}&longitude=${selected.lon}&current=wind_speed_10m,wind_gusts_10m,wind_direction_10m,visibility&wind_speed_unit=mph&timezone=auto`;
+      const marineUrl=`https://marine-api.open-meteo.com/v1/marine?latitude=${selected.lat}&longitude=${selected.lon}&current=wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity,sea_level_height_msl&timezone=auto&cell_selection=sea`;
+      try{
+        const [weather,marine]=await Promise.all([fetch(weatherUrl).then(r=>{if(!r.ok)throw Error('Weather unavailable');return r.json()}),fetch(marineUrl).then(r=>{if(!r.ok)throw Error('Marine unavailable');return r.json()})]);
+        const w=weather.current||{},m=marine.current||{};
+        show('wind',`${Math.round(w.wind_speed_10m)} mph · gusts ${Math.round(w.wind_gusts_10m)} mph`);
+        show('waves',m.wave_height==null?'Not available':`${m.wave_height.toFixed(1)} m · ${Math.round(m.wave_direction)}° · ${m.wave_period?.toFixed(1)||'—'} s`);
+        show('visibility',w.visibility==null?'Not available':`${(w.visibility/1000).toFixed(1)} km`);
+        show('seaTemp',m.sea_surface_temperature==null?'Not available':`${m.sea_surface_temperature.toFixed(1)} °C`);
+        show('seaLevel',m.sea_level_height_msl==null?'Not available':`${m.sea_level_height_msl.toFixed(2)} m vs mean`);
+        const caution=(m.wave_height??0)>0.8||(w.wind_gusts_10m??0)>18||(w.visibility??99999)<5000;
+        const unsafe=(m.wave_height??0)>1.5||(w.wind_gusts_10m??0)>25||(w.visibility??99999)<1500;
+        show('outlook',unsafe?'High-risk conditions':caution?'Extra care required':'Conditions look manageable');
+        show('outlookText',unsafe?'Do not rely on this app alone. Check official warnings before departure.':caution?'Review your boat limits and official local forecast before departure.':'No elevated threshold detected, but official checks are still essential.');
+        show('statusIcon',unsafe?'!':caution?'!':'✓');
+        show('liveStamp',`Updated ${new Date(w.time||Date.now()).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})} · model data`);
+        toast.textContent='Live conditions updated';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2400);
+      }catch(error){
+        show('outlook','Live data unavailable');show('outlookText','Please check an official marine forecast before travelling.');show('statusIcon','!');
+        ['wind','waves','visibility','seaTemp','seaLevel'].forEach(id=>show(id,'Unavailable'));
+        show('liveStamp','Could not reach the live provider · try again');
+      }
+    }
+    list.addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;const x=locations[+b.dataset.i];selected={lat:x.lat,lon:x.lon};harbour.value=x.harbour;area.value=x.area;mapHarbour.textContent=x.harbour;mapArea.textContent=x.area;planner.scrollIntoView({behavior:'smooth'});toast.textContent='Destination selected · loading live data';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2400);fetchLive()});
+    document.getElementById('check').addEventListener('click',()=>{mapHarbour.textContent=harbour.value;mapArea.textContent=area.value;mapTime.textContent=leave.value;result.scrollIntoView({behavior:'smooth'});fetchLive()});
+    fetchLive();
   </script>
 </body>
 </html>

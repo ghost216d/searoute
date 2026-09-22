@@ -169,10 +169,20 @@ async function identifyFish(data) {
 window.AnglerRouteLocalAI = {
   async run(action, data) {
     try {
+      if (action === 'trip_brief') {
+        status.className = 'ai-status online';
+        status.textContent = 'Trip brief ready — built from the live information shown in AnglerRoute.';
+        return localTripBrief(data.context);
+      }
       if (action === 'question') {
         status.className = 'ai-status online';
         status.textContent = 'Fishing assistant ready — fast answers with no model download or usage limit.';
         return localQuestionAnswer(data.question, data.context);
+      }
+      if (action === 'catch_post') {
+        status.className = 'ai-status online';
+        status.textContent = 'Catch post ready — created privately on this phone.';
+        return localCatchPost(data);
       }
       return action === 'identify_fish' ? await identifyFish(data) : await runText(action, data);
     } catch (error) {

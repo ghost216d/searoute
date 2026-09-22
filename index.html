@@ -303,6 +303,6 @@
     document.getElementById('copyAiPost').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(aiPostAnswer.textContent);toast.textContent='Post copied';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}catch(error){toast.textContent='Could not copy on this browser';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}});
     renderSavedSpots();fetchLive();fetchFishFinder();
   </script>
-  <script type="module" src="on-device-ai.js"></script>
+  <script type="module" src="on-device-ai.js?v=ask-fix-2"></script>
 </body>
 </html>

@@ -68,12 +68,18 @@ function localTripBrief(context = {}) {
 
 function localQuestionAnswer(question, context = {}) {
   const q = String(question || '').toLowerCase();
-  if (/bait|lure/.test(q)) return `The app currently lists ${value(context.likelySpecies, 'no confirmed target species')}. Choose bait or lures for the target species and local water, and check local rules before fishing.`;
+  const place = value(context.area, 'your selected area');
+  const species = value(context.likelySpecies, 'no confirmed target species');
+  if (/tide|tidal/.test(q)) return `The live panel is not an official tide prediction. For ${place}, check the relevant harbour or hydrographic tide service before leaving, and allow for changes in depth, current and access on the return journey.`;
+  if (/licen[cs]e|permit|rule|legal|season|limit|size/.test(q)) return `Rules vary by location, water and species. Check the official authority for ${place} for licences, access, closed seasons, minimum sizes and catch limits. The app currently lists these possible species: ${species}.`;
+  if (/boat|sail|navigation|route|harbour|anchor|vhf/.test(q)) return `For the planned ${value(context.boat, 'boat')}, check the official forecast and notices, fuel or battery, lifejackets, VHF or another reliable way to call for help, navigation lights, anchor, charts and a return plan. Avoid relying on this app as a navigation chart.`;
+  if (/bait|lure|hook|rig/.test(q)) return `Likely species shown for ${place}: ${species}. Choose bait, lure, hook and rig for the target species, water type and local rules. Ask a local tackle shop when the species or method is uncertain.`;
   if (/pack|bring|equipment|kit/.test(q)) return `Take a charged phone, weather-appropriate clothing, water, first-aid kit, landing and unhooking equipment, and the correct personal safety equipment. For a boat, also verify lifejackets, communications, fuel, navigation lights and your return plan.`;
   if (/safe|danger|weather|wind|wave|condition/.test(q)) return `The app reading is ${value(context.outlook)}. Wind: ${value(context.wind)}; waves: ${value(context.waves)}; visibility: ${value(context.visibility)}. This cannot confirm safety—check the official forecast, local notices and conditions at the water before leaving.`;
-  if (/fish|species|catch/.test(q)) return `Species currently suggested for the selected area: ${value(context.likelySpecies)}. Treat this as general guidance and confirm identification, seasons, sizes and catch limits with an authoritative local source.`;
-  if (/beginner|start/.test(q)) return `Start from an accessible shore location in daylight, tell someone your plan and return time, check the official forecast and local rules, and use simple tackle suited to the likely species: ${value(context.likelySpecies)}.`;
-  return `For ${value(context.area, 'this location')}, the app shows: ${value(context.outlook)}; wind ${value(context.wind)}; waves ${value(context.waves)}; visibility ${value(context.visibility)}. Ask about safety, weather, kit, bait, beginners or likely fish for a more specific answer. Always verify official local information.`;
+  if (/fish|species|catch|habit|feed|depth/.test(q)) return `Species currently suggested for ${place}: ${species}. Activity can change with season, light, water temperature, depth and food. Treat this as general guidance and confirm identification, seasons, sizes and catch limits with an authoritative local source.`;
+  if (/beginner|start|new to/.test(q)) return `Start from an accessible shore location in daylight, tell someone your plan and return time, check the official forecast and local rules, and use simple tackle suited to the likely species: ${species}.`;
+  if (/when|time|morning|evening|night/.test(q)) return `Your planned time is ${value(context.leave)} to ${value(context.returnBy)} and the app shows daylight as ${value(context.daylight)}. Fish activity varies by species and water, so also consider light, temperature, tide or flow and local knowledge.`;
+  return `I can help with fishing safety, weather, tides, bait, tackle, likely species, licences, boats and sailing. For ${place}, the current app reading is ${value(context.outlook)} with wind ${value(context.wind)}, waves ${value(context.waves)} and visibility ${value(context.visibility)}. Please ask one short fishing question.`;
 }
 
 function localCatchPost(data = {}) {
@@ -163,6 +169,11 @@ async function identifyFish(data) {
 window.AnglerRouteLocalAI = {
   async run(action, data) {
     try {
+      if (action === 'question') {
+        status.className = 'ai-status online';
+        status.textContent = 'Fishing assistant ready — fast answers with no model download or usage limit.';
+        return localQuestionAnswer(data.question, data.context);
+      }
       return action === 'identify_fish' ? await identifyFish(data) : await runText(action, data);
     } catch (error) {
       status.className = 'ai-status error';
